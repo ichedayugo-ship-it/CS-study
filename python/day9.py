@@ -90,3 +90,16 @@ word = input("Enter a word")
 meaning = input("Tell me the meaning of the word")
 words[word]=meaning
 print(words)
+
+words = {
+    "apple":"りんご",
+    "book":"本",
+    "city":"都市"
+}
+word=input("Enter a word")
+if word in words:
+    print(word, words[word])
+else:
+    meaning = input("Tell me the meaning of the word")
+    words[word]=meaning
+    print(words)
