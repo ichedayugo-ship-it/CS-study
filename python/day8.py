@@ -68,3 +68,4 @@ words = {
     "study": "勉強する"
 }
 print(words["study"])
+

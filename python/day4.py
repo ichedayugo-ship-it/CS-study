@@ -1,10 +1,4 @@
-def check_age(age):
-    if age > 18:
-        print("Adult")
-    else:
-        print("Minor")  
-
-check_age(53)  
+8
 
 def check_number(number):
     if number >0:
