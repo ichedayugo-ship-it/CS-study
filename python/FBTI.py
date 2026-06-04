@@ -1,9 +1,6 @@
-# app.py
-
-import streamlit as st
 
 QUESTIONS = [
-    # A. 明示性
+    # A. 明示性：間接的 / 直接的
     {"id": 1, "text": "相手の発表や成果物に問題があると感じたら、その問題点をはっきり言う方だ。", "category": "clarity"},
     {"id": 2, "text": "相手に改善してほしい点があるとき、遠回しな表現よりも直接伝える方がよいと思う。", "category": "clarity"},
     {"id": 3, "text": "フィードバックでは、相手が誤解しないように、問題点を明確に言葉にするべきだと思う。", "category": "clarity"},
@@ -15,7 +12,7 @@ QUESTIONS = [
     {"id": 9, "text": "相手が気づいていない問題は、こちらから明確に指摘する必要があると思う。", "category": "clarity"},
     {"id": 10, "text": "「もう少し工夫できるかも」という言い方より、「ここを直した方がよい」という言い方の方が分かりやすいと思う。", "category": "clarity"},
 
-    # B. 主導性
+    # B. 主導性：提案的 / 指示的
     {"id": 11, "text": "フィードバックをするとき、自分は改善方法まで示すことが多い。", "category": "leadership"},
     {"id": 12, "text": "相手が迷わないように、何をどう直すべきかをこちらから伝える方がよいと思う。", "category": "leadership"},
     {"id": 13, "text": "改善の方向性は、相手に考えさせるよりも、経験のある人が示した方が効率的だと思う。", "category": "leadership"},
@@ -27,7 +24,7 @@ QUESTIONS = [
     {"id": 19, "text": "相手の成長を考える場合でも、まずは正しいやり方を示すことが大切だと思う。", "category": "leadership"},
     {"id": 20, "text": "フィードバック後に相手が迷わないように、次の進め方はこちらから指定する方がよいと思う。", "category": "leadership"},
 
-    # C. 行動具体性
+    # C. 行動具体性：抽象的 / 具体的
     {"id": 21, "text": "フィードバックでは、相手が次に何をすればよいかまで伝えるようにしている。", "category": "concreteness"},
     {"id": 22, "text": "「もっと分かりやすく」だけでなく、どこをどう変えるべきかまで伝える方がよいと思う。", "category": "concreteness"},
     {"id": 23, "text": "改善点を伝えるときは、できるだけ具体例を出すようにしている。", "category": "concreteness"},
@@ -39,7 +36,7 @@ QUESTIONS = [
     {"id": 29, "text": "フィードバックでは、「何が問題か」だけでなく「どうすればよくなるか」まで示したい。", "category": "concreteness"},
     {"id": 30, "text": "自分のフィードバックを聞いた相手が、次に何をすればよいか分かる状態にしたい。", "category": "concreteness"},
 
-    # D. 配慮対象
+    # D. 配慮対象：関係配慮 / 課題優先
     {"id": 31, "text": "相手との関係が少し悪くなっても、成果物を良くするために必要なことは言うべきだと思う。", "category": "priority"},
     {"id": 32, "text": "フィードバックでは、相手の気持ちよりも、課題や成果の改善を優先することが多い。", "category": "priority"},
     {"id": 33, "text": "相手が落ち込む可能性があっても、問題点を正確に伝えることの方が大切だと思う。", "category": "priority"},
@@ -222,6 +219,24 @@ TYPE_RESULTS = {
 }
 
 
+def ask_question(question):
+    while True:
+        print()
+        print(f"Q{question['id']}. {question['text']}")
+        print("1: まったく当てはまらない")
+        print("2: あまり当てはまらない")
+        print("3: どちらともいえない")
+        print("4: やや当てはまる")
+        print("5: とても当てはまる")
+
+        answer = input("回答を入力してください 1〜5: ").strip()
+
+        if answer in ["1", "2", "3", "4", "5"]:
+            return int(answer)
+
+        print("1〜5の数字で入力してください。")
+
+
 def calculate_scores(answers):
     scores = {
         "clarity": 0,
@@ -234,7 +249,9 @@ def calculate_scores(answers):
     }
 
     for question in QUESTIONS:
-        scores[question["category"]] += answers[question["id"]]
+        question_id = question["id"]
+        category = question["category"]
+        scores[category] += answers[question_id]
 
     return scores
 
@@ -244,6 +261,7 @@ def judge_main_type(scores):
     leadership_code = "G" if scores["leadership"] >= 31 else "S"
     concreteness_code = "C" if scores["concreteness"] >= 31 else "A"
     priority_code = "T" if scores["priority"] >= 31 else "R"
+
     return clarity_code + leadership_code + concreteness_code + priority_code
 
 
@@ -251,10 +269,7 @@ def describe_axis_score(score, low_label, high_label):
     if score <= 24:
         return f"{low_label}の傾向が強い"
     elif score <= 34:
-        if score >= 31:
-            return f"中間・状況依存。やや{high_label}寄り"
-        else:
-            return f"中間・状況依存。やや{low_label}寄り"
+        return f"中間・状況依存。やや{high_label if score >= 31 else low_label}寄り"
     else:
         return f"{high_label}の傾向が強い"
 
@@ -295,142 +310,84 @@ def get_correction_message(face_level, direct_level, adaptability_level):
     return messages
 
 
-def show_question_section(title, category):
-    st.subheader(title)
+def show_result(scores, type_code):
+    result = TYPE_RESULTS[type_code]
+
+    face_level = describe_correction_score(scores["face"])
+    direct_level = describe_correction_score(scores["direct_preference"])
+    adaptability_level = describe_correction_score(scores["adaptability"])
+
+    print()
+    print("=" * 60)
+    print("診断結果")
+    print("=" * 60)
+
+    print()
+    print(f"あなたのタイプ：{type_code}型")
+    print(f"{result['name']}")
+    print(f"{result['style']}")
+
+    print()
+    print("【4軸スコア】")
+    print(f"明示性：{scores['clarity']} / 50 → {describe_axis_score(scores['clarity'], '間接的', '直接的')}")
+    print(f"主導性：{scores['leadership']} / 50 → {describe_axis_score(scores['leadership'], '提案的', '指示的')}")
+    print(f"行動具体性：{scores['concreteness']} / 50 → {describe_axis_score(scores['concreteness'], '抽象的', '具体的')}")
+    print(f"配慮対象：{scores['priority']} / 50 → {describe_axis_score(scores['priority'], '関係配慮', '課題優先')}")
+
+    print()
+    print("【文化・性格補正スコア】")
+    print(f"面子・上下関係配慮：{scores['face']} / 25 → {face_level}")
+    print(f"率直性・明確性志向：{scores['direct_preference']} / 25 → {direct_level}")
+    print(f"状況適応・空気読み：{scores['adaptability']} / 25 → {adaptability_level}")
+
+    print()
+    print("【タイプの特徴】")
+    print(result["summary"])
+
+    print()
+    print("【強み】")
+    print(result["strength"])
+
+    print()
+    print("【異文化間で起きやすいズレ】")
+    print(result["risk"])
+
+    print()
+    print("【おすすめ調整】")
+    print(result["advice"])
+
+    print()
+    print("【おすすめフレーズ】")
+    print(result["phrase"])
+
+    print()
+    print("【文化補正メッセージ】")
+    correction_messages = get_correction_message(face_level, direct_level, adaptability_level)
+    for message in correction_messages:
+        print("- " + message)
+
+    print()
+    print("=" * 60)
+
+
+def main():
+    print("=" * 60)
+    print("異文化フィードバック・スタイル診断")
+    print("=" * 60)
+    print()
+    print("これから55問に答えてください。")
+    print("各質問に対して、1〜5の数字で回答します。")
+    print()
 
     answers = {}
 
     for question in QUESTIONS:
-        if question["category"] == category:
-            answers[question["id"]] = st.radio(
-                f"Q{question['id']}. {question['text']}",
-                options=[1, 2, 3, 4, 5],
-                format_func=lambda x: {
-                    1: "1：まったく当てはまらない",
-                    2: "2：あまり当てはまらない",
-                    3: "3：どちらともいえない",
-                    4: "4：やや当てはまる",
-                    5: "5：とても当てはまる",
-                }[x],
-                index=2,
-                key=f"q_{question['id']}",
-            )
+        answers[question["id"]] = ask_question(question)
 
-    return answers
+    scores = calculate_scores(answers)
+    type_code = judge_main_type(scores)
 
-
-def main():
-    st.set_page_config(
-        page_title="異文化フィードバック・スタイル診断",
-        page_icon="🗣️",
-        layout="centered"
-    )
-
-    st.title("異文化フィードバック・スタイル診断")
-    st.write(
-        "この診断では、あなたのフィードバック傾向を、"
-        "明示性・主導性・行動具体性・配慮対象の4軸から分析します。"
-        "さらに、文化背景や状況適応の傾向も補正情報として表示します。"
-    )
-
-    st.info("回答はすべて5段階評価です。迷った場合は「3：どちらともいえない」を選んでください。")
-
-    with st.expander("回答基準を見る"):
-        st.write("1：まったく当てはまらない")
-        st.write("2：あまり当てはまらない")
-        st.write("3：どちらともいえない")
-        st.write("4：やや当てはまる")
-        st.write("5：とても当てはまる")
-
-    all_answers = {}
-
-    with st.expander("A. 明示性：間接的 / 直接的", expanded=True):
-        all_answers.update(show_question_section("A. 明示性", "clarity"))
-
-    with st.expander("B. 主導性：提案的 / 指示的"):
-        all_answers.update(show_question_section("B. 主導性", "leadership"))
-
-    with st.expander("C. 行動具体性：抽象的 / 具体的"):
-        all_answers.update(show_question_section("C. 行動具体性", "concreteness"))
-
-    with st.expander("D. 配慮対象：関係配慮 / 課題優先"):
-        all_answers.update(show_question_section("D. 配慮対象", "priority"))
-
-    with st.expander("E-1. 面子・上下関係配慮"):
-        all_answers.update(show_question_section("E-1. 面子・上下関係配慮", "face"))
-
-    with st.expander("E-2. 率直性・明確性志向"):
-        all_answers.update(show_question_section("E-2. 率直性・明確性志向", "direct_preference"))
-
-    with st.expander("E-3. 状況適応・空気読み"):
-        all_answers.update(show_question_section("E-3. 状況適応・空気読み", "adaptability"))
-
-    st.divider()
-
-    if st.button("診断結果を見る", type="primary"):
-        scores = calculate_scores(all_answers)
-        type_code = judge_main_type(scores)
-        result = TYPE_RESULTS[type_code]
-
-        face_level = describe_correction_score(scores["face"])
-        direct_level = describe_correction_score(scores["direct_preference"])
-        adaptability_level = describe_correction_score(scores["adaptability"])
-        correction_messages = get_correction_message(face_level, direct_level, adaptability_level)
-
-        st.header("診断結果")
-
-        st.subheader(f"{type_code}型：{result['name']}")
-        st.write(f"**{result['style']}**")
-
-        st.success(result["summary"])
-
-        st.subheader("4軸スコア")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric("明示性", f"{scores['clarity']} / 50")
-            st.write(describe_axis_score(scores["clarity"], "間接的", "直接的"))
-
-            st.metric("主導性", f"{scores['leadership']} / 50")
-            st.write(describe_axis_score(scores["leadership"], "提案的", "指示的"))
-
-        with col2:
-            st.metric("行動具体性", f"{scores['concreteness']} / 50")
-            st.write(describe_axis_score(scores["concreteness"], "抽象的", "具体的"))
-
-            st.metric("配慮対象", f"{scores['priority']} / 50")
-            st.write(describe_axis_score(scores["priority"], "関係配慮", "課題優先"))
-
-        st.subheader("文化・性格補正スコア")
-        col3, col4, col5 = st.columns(3)
-
-        with col3:
-            st.metric("面子・上下関係配慮", f"{scores['face']} / 25")
-            st.write(face_level)
-
-        with col4:
-            st.metric("率直性・明確性志向", f"{scores['direct_preference']} / 25")
-            st.write(direct_level)
-
-        with col5:
-            st.metric("状況適応・空気読み", f"{scores['adaptability']} / 25")
-            st.write(adaptability_level)
-
-        st.subheader("強み")
-        st.write(result["strength"])
-
-        st.subheader("異文化間で起きやすいズレ")
-        st.write(result["risk"])
-
-        st.subheader("おすすめ調整")
-        st.write(result["advice"])
-
-        st.subheader("おすすめフレーズ")
-        st.info(result["phrase"])
-
-        st.subheader("文化補正メッセージ")
-        for message in correction_messages:
-            st.write(f"- {message}")
+    show_result(scores, type_code)
 
 
 if __name__ == "__main__":
